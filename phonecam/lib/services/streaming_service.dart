@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:camera/camera.dart';
 import 'package:network_info_plus/network_info_plus.dart';
@@ -35,7 +34,7 @@ class StreamingService extends ChangeNotifier {
   int _targetFps = 30;
   int get targetFps => _targetFps;
 
-  int _jpegQuality = 80; // 0-100
+  final int _jpegQuality = 80; // 0-100
 
   // ── Internals ─────────────────────────────────────────────────────────────
   CameraController? _cameraController;
