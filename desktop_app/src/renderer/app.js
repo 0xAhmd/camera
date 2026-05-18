@@ -25,10 +25,12 @@ window.phonecam.on('ready', ({ ip, port, virtualCamAvailable }) => {
   qrIp.textContent = `${ip}:${port}`;
   mjpegUrl.textContent = `http://${ip}:8080/stream`;
 
-  // Generate QR code
-  if (!qrGenerated) {
+  // Generate QR code — guard: only once, and only after QRCode lib is loaded
+  if (!qrGenerated && typeof QRCode !== 'undefined') {
     qrGenerated = true;
-    new QRCode(document.getElementById('qr-canvas'), {
+    const container = document.getElementById('qr-canvas');
+    container.innerHTML = ''; // clear any old attempt
+    new QRCode(container, {
       text: connectionStr,
       width: 96,
       height: 96,
@@ -39,18 +41,21 @@ window.phonecam.on('ready', ({ ip, port, virtualCamAvailable }) => {
   }
 
   // Show virtual cam status
-  if (virtualCamAvailable) {
+  updateVcamBadge(virtualCamAvailable);
+});
+
+function updateVcamBadge(available) {
+  vcamBadge.classList.remove('hidden');
+  if (available) {
     vcamBadge.textContent = 'Virtual cam active';
     vcamBadge.className = 'badge badge--on';
-    vcamBadge.classList.remove('hidden');
     warnVcam.classList.add('hidden');
   } else {
     vcamBadge.textContent = 'No virtual cam';
     vcamBadge.className = 'badge badge--off';
-    vcamBadge.classList.remove('hidden');
     warnVcam.classList.remove('hidden');
   }
-});
+}
 
 // ── Connection events ────────────────────────────────────────────────────────
 
@@ -78,12 +83,10 @@ window.phonecam.on('phone:disconnected', () => {
 
 // ── Frame rendering ──────────────────────────────────────────────────────────
 
-// Buffer for latest frame to avoid race conditions
 let pendingFrame = null;
 let renderScheduled = false;
 
 window.phonecam.on('frame', (jpegBuffer) => {
-  // jpegBuffer is a Buffer (Uint8Array) of raw JPEG bytes
   pendingFrame = jpegBuffer;
   if (!renderScheduled) {
     renderScheduled = true;
@@ -98,13 +101,11 @@ function renderFrame() {
   const buffer = pendingFrame;
   pendingFrame = null;
 
-  // Convert Buffer to Blob → URL → Image → draw on canvas
   const blob = new Blob([buffer], { type: 'image/jpeg' });
   const url = URL.createObjectURL(blob);
   const img = new Image();
 
   img.onload = () => {
-    // Resize canvas to match image if needed
     if (canvas.width !== img.naturalWidth || canvas.height !== img.naturalHeight) {
       canvas.width = img.naturalWidth;
       canvas.height = img.naturalHeight;
@@ -130,7 +131,6 @@ btnFlip.addEventListener('click', () => {
   window.phonecam.sendControl({ cmd: 'switch_camera' });
 });
 
-// Resolution buttons
 document.querySelectorAll('.res-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.res-btn').forEach(b => b.classList.remove('active'));
@@ -139,7 +139,6 @@ document.querySelectorAll('.res-btn').forEach(btn => {
   });
 });
 
-// FPS buttons
 document.querySelectorAll('.fps-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.fps-btn').forEach(b => b.classList.remove('active'));
@@ -148,7 +147,6 @@ document.querySelectorAll('.fps-btn').forEach(btn => {
   });
 });
 
-// OBS install link
 document.getElementById('obs-link')?.addEventListener('click', (e) => {
   e.preventDefault();
   window.open('https://obsproject.com/download');
@@ -157,8 +155,14 @@ document.getElementById('obs-link')?.addEventListener('click', (e) => {
 // ── Initial status fetch ─────────────────────────────────────────────────────
 
 window.phonecam.getStatus().then((status) => {
+  // If already connected when window opens (e.g. was hidden)
   if (status.connected) {
-    // Already connected (e.g. window was hidden and re-shown)
-    window.phonecam.on('phone:connected', () => {}); // re-trigger
+    isConnected = true;
+    statusDot.classList.add('connected');
+    overlay.classList.add('hidden');
+    statsOverlay.classList.remove('hidden');
+    btnFlip.disabled = false;
   }
+  // Show vcam badge immediately from cached status
+  updateVcamBadge(status.virtualCamAvailable);
 });

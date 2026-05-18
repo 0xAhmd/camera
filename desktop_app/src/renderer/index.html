@@ -65,7 +65,7 @@
     <!-- QR code section -->
     <div class="qr-section" id="qr-section">
       <div class="qr-wrap">
-        <canvas id="qr-canvas"></canvas>
+        <div id="qr-canvas"></div>
       </div>
       <div class="qr-info">
         <p class="qr-title">Scan with PhoneCam app</p>
@@ -92,6 +92,7 @@
 
   </div>
 
+  <!-- QRCode lib MUST load before app.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="app.js"></script>
 </body>
