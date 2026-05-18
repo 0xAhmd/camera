@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PhoneCam</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+
+    <!-- Header -->
+    <header class="header">
+      <div class="logo">
+        <span class="dot"></span>
+        PhoneCam
+      </div>
+      <div class="header-right">
+        <span id="vcam-badge" class="badge badge--off hidden">Virtual cam</span>
+        <span id="status-dot" class="status-dot"></span>
+      </div>
+    </header>
+
+    <!-- Video preview -->
+    <div class="preview-wrap" id="preview-wrap">
+      <canvas id="preview" class="preview"></canvas>
+
+      <div class="preview-overlay" id="preview-overlay">
+        <div class="no-signal">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+          </svg>
+          <p>Waiting for phone</p>
+          <span class="hint">Scan the QR code below in PhoneCam mobile</span>
+        </div>
+      </div>
+
+      <!-- Stats overlay (shown when streaming) -->
+      <div class="stats-overlay hidden" id="stats-overlay">
+        <span id="fps-stat">0 fps</span>
+        <span id="kbps-stat">0 kb/s</span>
+      </div>
+    </div>
+
+    <!-- Controls row -->
+    <div class="controls-row" id="controls-row">
+      <button class="btn btn--icon" id="btn-flip" title="Switch camera" disabled>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/>
+        </svg>
+      </button>
+
+      <div class="res-group">
+        <button class="res-btn" data-res="low">480p</button>
+        <button class="res-btn active" data-res="high">720p</button>
+        <button class="res-btn" data-res="veryHigh">1080p</button>
+      </div>
+
+      <div class="res-group">
+        <button class="fps-btn active" data-fps="30">30fps</button>
+        <button class="fps-btn" data-fps="60">60fps</button>
+      </div>
+    </div>
+
+    <!-- QR code section -->
+    <div class="qr-section" id="qr-section">
+      <div class="qr-wrap">
+        <canvas id="qr-canvas"></canvas>
+      </div>
+      <div class="qr-info">
+        <p class="qr-title">Scan with PhoneCam app</p>
+        <p class="qr-ip" id="qr-ip">Loading...</p>
+        <p class="qr-sub">Or phone will auto-connect on same Wi-Fi</p>
+        <p class="qr-sub" style="margin-top: 4px">
+          HTTP fallback: <code id="mjpeg-url">http://localhost:8080/stream</code>
+        </p>
+      </div>
+    </div>
+
+    <!-- Virtual cam warning -->
+    <div class="warn-card hidden" id="warn-vcam">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <div>
+        <strong>Virtual camera not available</strong>
+        <span>Install OBS Studio to enable webcam in Discord/Zoom. 
+        MJPEG stream works in OBS as a Browser/Media source.</span>
+      </div>
+      <a href="https://obsproject.com" class="warn-link" id="obs-link">Install OBS →</a>
+    </div>
+
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
