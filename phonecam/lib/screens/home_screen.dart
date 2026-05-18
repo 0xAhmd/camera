@@ -22,7 +22,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    // Request foreground service permissions on Android
     ForegroundServiceManager.init();
   }
 
@@ -175,6 +174,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 }
 
+// ── Camera Preview Card ───────────────────────────────────────────────────────
+
 class _CameraPreviewCard extends StatelessWidget {
   const _CameraPreviewCard({required this.service, required this.colors});
   final StreamingService service;
@@ -182,9 +183,13 @@ class _CameraPreviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final controller = service.cameraController;
+    final isReady = controller != null && controller.value.isInitialized;
+    final isStreaming = service.state == StreamingState.streaming;
+
     return Container(
       decoration: BoxDecoration(
-        color: colors.surface,
+        color: Colors.black,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: colors.card, width: 1),
       ),
@@ -192,28 +197,42 @@ class _CameraPreviewCard extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          // Camera preview
-          if (service.state == StreamingState.streaming &&
-              service.state != StreamingState.idle)
-            const _CameraPreviewWidget()
+          // ── Actual camera preview ──────────────────────────────────────
+          if (isReady)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: FittedBox(
+                fit: BoxFit.cover,
+                child: SizedBox(
+                  width: controller.value.previewSize?.height ?? 1,
+                  height: controller.value.previewSize?.width ?? 1,
+                  child: CameraPreview(controller),
+                ),
+              ),
+            )
           else
             Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.videocam_off_outlined,
-                      size: 64, color: colors.muted),
+                  Icon(
+                    isStreaming
+                        ? Icons.hourglass_empty_rounded
+                        : Icons.videocam_off_outlined,
+                    size: 64,
+                    color: colors.muted,
+                  ),
                   const SizedBox(height: 12),
                   Text(
-                    'Camera inactive',
+                    isStreaming ? 'Starting camera...' : 'Camera inactive',
                     style: TextStyle(color: colors.muted, fontSize: 16),
                   ),
                 ],
               ),
             ),
 
-          // Camera switch button (top-right)
-          if (service.state == StreamingState.streaming)
+          // ── Camera switch button ───────────────────────────────────────
+          if (isReady)
             Positioned(
               top: 12,
               right: 12,
@@ -234,13 +253,14 @@ class _CameraPreviewCard extends StatelessWidget {
               ),
             ),
 
-          // FPS indicator
-          if (service.state == StreamingState.streaming)
+          // ── FPS indicator ──────────────────────────────────────────────
+          if (isReady)
             Positioned(
               top: 12,
               left: 12,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: Colors.black.withOpacity(0.5),
                   borderRadius: BorderRadius.circular(8),
@@ -248,7 +268,8 @@ class _CameraPreviewCard extends StatelessWidget {
                 child: Text(
                   '${service.fps.toStringAsFixed(0)} fps',
                   style: TextStyle(
-                    color: service.fps >= 25 ? colors.accent : Colors.orange,
+                    color:
+                        service.fps >= 25 ? colors.accent : Colors.orange,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
@@ -256,13 +277,14 @@ class _CameraPreviewCard extends StatelessWidget {
               ),
             ),
 
-          // Streaming badge
-          if (service.state == StreamingState.streaming)
+          // ── LIVE badge ─────────────────────────────────────────────────
+          if (isStreaming)
             Positioned(
               bottom: 12,
               left: 12,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
                   color: Colors.red.withOpacity(0.85),
                   borderRadius: BorderRadius.circular(6),
@@ -298,27 +320,7 @@ class _CameraPreviewCard extends StatelessWidget {
   }
 }
 
-class _CameraPreviewWidget extends StatelessWidget {
-  const _CameraPreviewWidget();
-
-  @override
-  Widget build(BuildContext context) {
-    // In a real build, you'd use the CameraController from the service
-    // For simplicity, we show a placeholder here — wire up in production
-    // by exposing cameraController from StreamingService
-    return const ColoredBox(
-      color: Colors.black,
-      child: Center(
-        child: Text(
-          'Camera preview\n(wire CameraController)',
-          textAlign: TextAlign.center,
-          style: TextStyle(color: Colors.white54),
-        ),
-      ),
-    );
-    // Production: CameraPreview(service.cameraController!)
-  }
-}
+// ── Status Row ────────────────────────────────────────────────────────────────
 
 class _StatusRow extends StatelessWidget {
   const _StatusRow({required this.service, required this.colors});
@@ -339,7 +341,8 @@ class _StatusRow extends StatelessWidget {
         _Chip(
           icon: Icons.devices,
           label: '${service.connectedClients} connected',
-          color: service.connectedClients > 0 ? colors.accent : colors.muted,
+          color:
+              service.connectedClients > 0 ? colors.accent : colors.muted,
           colors: colors,
         ),
         const SizedBox(width: 8),
@@ -355,11 +358,16 @@ class _StatusRow extends StatelessWidget {
 
   String _resLabel(ResolutionPreset r) {
     switch (r) {
-      case ResolutionPreset.low: return '480p';
-      case ResolutionPreset.medium: return '540p';
-      case ResolutionPreset.high: return '720p';
-      case ResolutionPreset.veryHigh: return '1080p';
-      default: return '720p';
+      case ResolutionPreset.low:
+        return '480p';
+      case ResolutionPreset.medium:
+        return '540p';
+      case ResolutionPreset.high:
+        return '720p';
+      case ResolutionPreset.veryHigh:
+        return '1080p';
+      default:
+        return '720p';
     }
   }
 }
@@ -402,6 +410,8 @@ class _Chip extends StatelessWidget {
     );
   }
 }
+
+// ── QR Card ───────────────────────────────────────────────────────────────────
 
 class _QrCard extends StatelessWidget {
   const _QrCard({required this.ip, required this.colors});

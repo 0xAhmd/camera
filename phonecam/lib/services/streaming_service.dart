@@ -37,7 +37,7 @@ class StreamingService extends ChangeNotifier {
   final int _jpegQuality = 80; // 0-100
 
   // ── Internals ─────────────────────────────────────────────────────────────
-  CameraController? _cameraController;
+  CameraController? cameraController;
   HttpServer? _httpServer;
   final Set<WebSocket> _clients = {};
 
@@ -103,18 +103,18 @@ class StreamingService extends ChangeNotifier {
       orElse: () => cameras.first,
     );
 
-    await _cameraController?.dispose();
-    _cameraController = CameraController(
+    await cameraController?.dispose();
+    cameraController = CameraController(
       _currentCamera!,
       _resolution,
       enableAudio: false,
       imageFormatGroup: ImageFormatGroup.jpeg, // JPEG straight from camera
     );
 
-    await _cameraController!.initialize();
+    await cameraController!.initialize();
 
     // Start frame stream
-    await _cameraController!.startImageStream(_onCameraFrame);
+    await cameraController!.startImageStream(_onCameraFrame);
   }
 
   void _onCameraFrame(CameraImage frame) {
@@ -244,9 +244,9 @@ class StreamingService extends ChangeNotifier {
 
   Future<void> _restartCamera() async {
     try {
-      await _cameraController?.stopImageStream();
-      await _cameraController?.dispose();
-      _cameraController = null;
+      await cameraController?.stopImageStream();
+      await cameraController?.dispose();
+      cameraController = null;
       await _initCamera();
     } catch (e) {
       debugPrint('Camera restart error: $e');
@@ -262,9 +262,9 @@ class StreamingService extends ChangeNotifier {
   }
 
   Future<void> _stopAll() async {
-    await _cameraController?.stopImageStream();
-    await _cameraController?.dispose();
-    _cameraController = null;
+    await cameraController?.stopImageStream();
+    await cameraController?.dispose();
+    cameraController = null;
 
     for (final client in _clients) {
       await client.close();
